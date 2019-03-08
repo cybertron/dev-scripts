@@ -98,7 +98,7 @@ ExecStartPre=-/usr/bin/podman create \
     --name coredns \
     --volume /etc/coredns:/etc/coredns:z \
     --network host \
-    quay.io/metalkube/coredns-mdns \
+    quay.io/metalkube/coredns-mdns:latest \
         --conf /etc/coredns/Corefile
 ExecStart=/usr/bin/podman start -a coredns
 ExecStop=/usr/bin/podman stop -t 10 coredns

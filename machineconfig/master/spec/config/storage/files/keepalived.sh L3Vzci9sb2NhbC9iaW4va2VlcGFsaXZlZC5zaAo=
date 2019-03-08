@@ -40,7 +40,7 @@ EOF
 
 mkdir --parents /etc/keepalived
 
-KEEPALIVED_IMAGE=quay.io/celebdor/keepalived:latest
+KEEPALIVED_IMAGE=quay.io/celebdor/keepalived:f29d
 if ! podman inspect "$KEEPALIVED_IMAGE" &>/dev/null; then
     echo "Pulling release image..."
     podman pull "$KEEPALIVED_IMAGE"
@@ -52,11 +52,13 @@ envsubst < /etc/keepalived/keepalived.conf.template | sudo tee /etc/keepalived/k
 
 MATCHES="$(sudo podman ps -a --format "{{.Names}}" | awk '/keepalived$/ {print $0}')"
 if [[ -z "$MATCHES" ]]; then
+    # TODO(bnemec): Figure out how to run this with more limited caps
     podman create \
             --name keepalived \
             --volume /etc/keepalived:/etc/keepalived:z \
             --network=host \
-            --cap-add=NET_ADMIN \
+            --privileged \
+            --cap-add=ALL \
             "${KEEPALIVED_IMAGE}" \
             /usr/sbin/keepalived -f /etc/keepalived/keepalived.conf --dont-fork -D -l -P
 fi
