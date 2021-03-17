@@ -34,7 +34,7 @@ cat << EOF > "$haproxy_config"
 defaults
     mode                    tcp
     log                     global
-    timeout connect         10s
+    timeout connect         30s
     timeout client          1m
     timeout server          1m
 frontend main
