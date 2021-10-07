@@ -1,0 +1,129 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: keepalived-v6
+  namespace: openshift-kni-infra
+  creationTimestamp:
+  deletionGracePeriodSeconds: 65
+  labels:
+    app: kni-infra-vrrp
+spec:
+  volumes:
+  - name: resource-dir
+    hostPath:
+      path: "/etc/kubernetes/static-pod-resources/keepalived"
+  - name: script-dir
+    hostPath:
+      path: "/etc/kubernetes/static-pod-resources/keepalived/scripts"
+  - name: kubeconfig
+    hostPath:
+      path: "/etc/kubernetes"
+  - name: kubeconfigvarlib
+    hostPath:
+      path: "/var/lib/kubelet"
+  - name: conf-dir
+    hostPath:
+      path: "/etc/keepalived"
+  - name: run-dir
+    empty-dir: {}
+  - name: chroot-host
+    hostPath:
+      path: "/"
+  containers:
+  - name: keepalivedv6
+    securityContext:
+      privileged: true
+    # TODO: Get the image from the default keepalived pod manifest
+    image: quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:24dbf54c5e8b6a714598b4f81b0cdcfe5b9c2be99f30dfc79a495d62b64f81cf
+    env:
+      - name: NSS_SDB_USE_CACHE
+        value: "no"
+    command:
+    - /bin/bash
+    - -c
+    - |
+      #/bin/bash
+      sigterm_handler()
+      {
+        if pid=$(pgrep -o keepalived); then
+          kill -s SIGTERM "$pid"
+        fi
+      }
+
+      reload_keepalived()
+      {
+        if pid=$(pgrep -o keepalived); then
+            kill -s SIGHUP "$pid"
+        else
+            /usr/sbin/keepalived -f /etc/keepalived/keepalived-v6.conf --dont-fork --vrrp --log-detail --log-console &
+        fi
+      }
+
+      msg_handler()
+      {
+        while read -r line; do
+          echo "The client sent: $line" >&2
+          # currently only 'reload' msg is supported
+          if [ "$line" = reload ]; then
+              reload_keepalived
+          fi
+        done
+      }
+
+      remove_vip()
+      {
+        address=$1
+        interface=$(ip -o a | awk "/\s${address}\// {print \$2}")
+        cidr=$(ip -o a | awk "/\s${address}\// {print \$4}")
+        if [ -n "$interface" ]; then
+            ip a del $cidr dev $interface
+        fi
+      }
+
+      set -ex
+      # Ensure that we don't have stale VIPs configured
+      # See https://bugzilla.redhat.com/show_bug.cgi?id=1931505
+      # TODO: Replace with VIPs
+      remove_vip "fd2e:6f44:5dd8:c956::5"
+      remove_vip "fd2e:6f44:5dd8:c956::4"
+      declare -r keepalived_sock="/var/run/keepalived/keepalived.sock"
+      export -f msg_handler
+      export -f reload_keepalived
+      export -f sigterm_handler
+
+      trap sigterm_handler SIGTERM
+      if [ -s "/etc/keepalived/keepalived-v6.conf" ]; then
+          /usr/sbin/keepalived -f /etc/keepalived/keepalived-v6.conf --dont-fork --vrrp --log-detail --log-console &
+      fi
+
+      rm -f "$keepalived_sock"
+      socat UNIX-LISTEN:${keepalived_sock},fork system:'bash -c msg_handler'
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+    volumeMounts:
+    - name: conf-dir
+      mountPath: "/etc/keepalived"
+    - name: run-dir
+      mountPath: "/var/run/keepalived"
+    - name: chroot-host
+      mountPath: "/host"
+    - name: kubeconfigvarlib
+      mountPath: "/var/lib/kubelet"
+    livenessProbe:
+      exec:
+        command:
+        - /bin/bash
+        - -c
+        - |
+          [ ! -s "/etc/keepalived/keepalived-v6.conf" ] || (echo "State = FAULT" > /tmp/keepalived.data && kill -s SIGUSR1 "$(pgrep -o keepalived)" && for i in $(seq 5); do grep -q "State = FAULT" /tmp/keepalived.data && sleep 1 || exit 0; done && exit 1)
+      initialDelaySeconds: 20
+      timeoutSeconds: 5
+    terminationMessagePolicy: FallbackToLogsOnError
+    imagePullPolicy: IfNotPresent
+  hostNetwork: true
+  tolerations:
+  - operator: Exists
+  priorityClassName: system-node-critical
+status: {}

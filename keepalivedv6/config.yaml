@@ -1,0 +1,69 @@
+global_defs {
+    enable_script_security
+    script_user root
+    max_auto_priority -1
+}
+
+vrrp_script chk_api {
+    # TODO: Set to api VIP
+    script "/bin/sh -c '/usr/sbin/ip a show br-ex | /usr/bin/grep -q 192.168.111.5/32'"
+    interval 2
+    weight 20
+    rise 1
+    fall 1
+}
+
+vrrp_script chk_ingress {
+    # TODO: Set to ingress VIP
+    script "/bin/sh -c '/usr/sbin/ip a show br-ex | /usr/bin/grep -q 192.168.111.4/32'"
+    interval 2
+    weight 20
+    rise 1
+    fall 1
+}
+
+# TODO: Update with cluster name
+vrrp_instance ostest_API {
+    state BACKUP
+    interface br-ex
+    # TODO: Make sure this doesn't conflict
+    virtual_router_id 1
+    priority 40
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        # TODO: Update with cluster name
+        auth_pass ostest_api_vip
+    }
+    virtual_ipaddress {
+        # TODO: Set to API VIP
+        fd2e:6f44:5dd8:c956::5/128
+    }
+    track_script {
+        chk_api
+    }
+}
+
+# TODO: Update with cluster name
+vrrp_instance ostest_INGRESS {
+    state BACKUP
+    interface br-ex
+    # TODO: Make sure this doesn't conflict
+    virtual_router_id 2
+    priority 20
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        # TODO: Update with cluster name
+        auth_pass ostest_ingress_vip
+    }
+    virtual_ipaddress {
+        # TODO: Set to ingress VIP
+        fd2e:6f44:5dd8:c956::4/128
+    }
+    track_script {
+        chk_ingress
+    }
+}
