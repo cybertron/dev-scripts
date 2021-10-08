@@ -91,10 +91,13 @@ spec:
       export -f reload_keepalived
       export -f sigterm_handler
 
-      # TODO: Don't do this if the rule already exists
       # Create iptables rule to loadbalance traffic coming in on VIP
-      ip6tables -A PREROUTING  -t nat --dst fd2e:6f44:5dd8:c956::5 -p tcp --dport 6443 -j REDIRECT --to-ports 9445 -m comment --comment OCP_API_LB_REDIRECT
-      ip6tables -A OUTPUT -t nat --dst fd2e:6f44:5dd8:c956::5 -p tcp --dport 6443 -j REDIRECT --to-ports 9445 -m comment --comment OCP_API_LB_REDIRECT -o lo
+      if ! ip6tables -L PREROUTING -t nat | grep OCP_API_LB_REDIRECT; then
+        ip6tables -A PREROUTING  -t nat --dst fd2e:6f44:5dd8:c956::5 -p tcp --dport 6443 -j REDIRECT --to-ports 9445 -m comment --comment OCP_API_LB_REDIRECT
+      fi
+      if ! ip6tables -L OUTPUT -t nat | grep OCP_API_LB_REDIRECT; then
+        ip6tables -A OUTPUT -t nat --dst fd2e:6f44:5dd8:c956::5 -p tcp --dport 6443 -j REDIRECT --to-ports 9445 -m comment --comment OCP_API_LB_REDIRECT -o lo
+      fi
 
       trap sigterm_handler SIGTERM
       if [ -s "/etc/keepalived/keepalived-v6.conf" ]; then
