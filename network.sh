@@ -228,12 +228,12 @@ function get_vips() {
     #
     if [[ -n "${EXTERNAL_SUBNET_V4}" ]]; then
         API_VIPS_V4=$(dig +noall +answer "api.${CLUSTER_DOMAIN}" @$(network_ip ${BAREMETAL_NETWORK_NAME}) | awk '{print $NF}')
-        INGRESS_VIPS_V4=$(nth_ip $EXTERNAL_SUBNET_V4 4)
+        INGRESS_VIPS_V4=$(nth_ip $EXTERNAL_SUBNET_V4 1)
     fi
 
     if [[ -n "${EXTERNAL_SUBNET_V6}" ]]; then
         API_VIPS_V6=$(dig -t AAAA +noall +answer "api.${CLUSTER_DOMAIN}" @$(network_ip ${BAREMETAL_NETWORK_NAME}) | awk '{print $NF}')
-        INGRESS_VIPS_V6=$(nth_ip $EXTERNAL_SUBNET_V6 4)
+        INGRESS_VIPS_V6=$(nth_ip $EXTERNAL_SUBNET_V6 1)
     fi
 
     API_VIPS=$(concat_parameters_with_vipsseparator ${API_VIPS_V4:-} ${API_VIPS_V6:-})

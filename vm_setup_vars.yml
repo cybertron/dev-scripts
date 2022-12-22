@@ -37,12 +37,12 @@ baremetal_network_cidr_v6: "{{ lookup('env', 'EXTERNAL_SUBNET_V6') }}"
 baremetal_network_cidr: "{{ baremetal_network_cidr_v4 | default(baremetal_network_cidr_v6, true) }}"
 
 dns_dualstackhost:
-  - ip: "{{ baremetal_network_cidr_v6 | nthhost(5) }}"
+  - ip: "{{ baremetal_network_cidr_v6 | nthhost(1) }}"
     hostnames:
       - "api"
 
 dns_extrahosts:
-  - ip: "{{ baremetal_network_cidr | nthhost(5) }}"
+  - ip: "{{ baremetal_network_cidr | nthhost(1) }}"
     hostnames:
       - "api"
   - ip: "{{ baremetal_network_cidr | nthhost(2) }}"
