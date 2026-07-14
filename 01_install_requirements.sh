@@ -8,6 +8,9 @@ source sanitychecks.sh
 source utils.sh
 source validation.sh
 
+# I cannot tell you how much I hate the way this works
+cp nodes.save nodes.json
+
 early_deploy_validation true
 
 if [ -z "${METAL3_DEV_ENV:-}" ]; then
@@ -39,7 +42,8 @@ sudo sh -c "echo 'max_parallel_downloads=8' >> /etc/dnf/dnf.conf"
 # Refresh dnf data
 # We could also use --refresh to just force metadata update
 # in the upgrade command,but this is more explicit and complete
-sudo dnf -y clean all
+# NOTE(bnemec): Hacking this out because I don't care about having a perfectly clean system right now and it takes forever to re-run dnf when we do this.
+#sudo dnf -y clean all
 
 old_version=$(sudo dnf info NetworkManager | grep Version | cut -d ':' -f 2)
 

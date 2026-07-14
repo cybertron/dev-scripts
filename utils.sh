@@ -291,6 +291,7 @@ function node_map_to_install_config_hosts() {
           address: ${address}
           username: ${username}
           password: ${password}
+          disableCertificateVerification: true
 EOF
 
       if [[ "$driver_prefix" == "redfish" ]]; then

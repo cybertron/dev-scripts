@@ -1,0 +1,28 @@
+networkConfig:
+  interfaces:
+  - name: eno8303
+    type: ethernet
+    state: up
+    ipv4:
+      enabled: false
+    ipv6:
+      enabled: false
+  - name: ens2f1
+    type: ethernet
+    state: up
+    ipv4:
+      address:
+      - ip: "10.1.1.7"
+        prefix-length: 24
+      enabled: true
+  dns-resolver:
+    config:
+      server:
+      - 10.1.1.1
+      - 10.10.2.1
+  routes:
+    config:
+    - destination: 0.0.0.0/0
+      next-hop-address: 10.1.1.1
+      next-hop-interface: ens2f1
+      weight: 1

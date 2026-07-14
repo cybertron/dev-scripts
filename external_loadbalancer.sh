@@ -11,6 +11,12 @@ sudo firewall-cmd --zone=libvirt --add-port=6443/tcp
 sudo firewall-cmd --zone=libvirt --add-port=8080/tcp
 sudo firewall-cmd --zone=libvirt --add-port=22623/tcp
 
+sudo firewall-cmd --zone=public --add-port=6443/tcp
+sudo firewall-cmd --zone=public --add-port=8080/tcp
+sudo firewall-cmd --zone=public --add-port=22623/tcp
+sudo firewall-cmd --zone=public --add-port=6385/tcp
+sudo firewall-cmd --zone=public --add-port=5000/tcp
+
 haproxy_config="${WORKING_DIR}/haproxy.cfg"
 echo $haproxy_config
 
@@ -32,6 +38,10 @@ else
      worker1=$(nth_ip $EXTERNAL_SUBNET_V4 24)
      bootstrap=$(nth_ip $EXTERNAL_SUBNET_V4 9)
 fi
+master0=10.1.3.1
+master1=10.1.3.3
+master2=10.1.3.5
+bootstrap=10.10.2.9
 
 cat << EOF > "$haproxy_config"
 defaults
@@ -106,17 +116,17 @@ EOF
 
 sudo podman run -d  --net host -v "${WORKING_DIR}":/etc/haproxy/:z --entrypoint bash --name extlb quay.io/openshift/origin-haproxy-router  -c 'haproxy -f /etc/haproxy/haproxy.cfg'
 
-sleep 5
-
-if [ "$(curl  --fail  https://$(wrap_if_ipv6 ${PROVISIONING_HOST_EXTERNAL_IP}):6443/version --insecure)" ]; then
-    echo " API is available through LB"
-else
-    echo " Can't access API through  LB"
-fi
-
-
-if [ "$(curl  --fail  --header "Host: console-openshift-console.apps.ostest.test.metalkube.org" http://$(wrap_if_ipv6 ${PROVISIONING_HOST_EXTERNAL_IP}):8080  -I -L --insecure)" ]; then
-    echo " Ingress is available through LB"
-else
-    echo " Can't access Ingress through LB"
-fi
+# sleep 5
+#
+# if [ "$(curl  --fail  https://$(wrap_if_ipv6 ${PROVISIONING_HOST_EXTERNAL_IP}):6443/version --insecure)" ]; then
+#     echo " API is available through LB"
+# else
+#     echo " Can't access API through  LB"
+# fi
+#
+#
+# if [ "$(curl  --fail  --header "Host: console-openshift-console.apps.ostest.test.metalkube.org" http://$(wrap_if_ipv6 ${PROVISIONING_HOST_EXTERNAL_IP}):8080  -I -L --insecure)" ]; then
+#     echo " Ingress is available through LB"
+# else
+#     echo " Can't access Ingress through LB"
+# fi

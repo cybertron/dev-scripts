@@ -108,7 +108,7 @@ EOF
     fi
 cat <<EOF
     bootstrapExternalStaticIP: "${BOOTSTRAP_IP}"
-    bootstrapExternalStaticGateway: "${PROVISIONING_HOST_EXTERNAL_IP}"
+    bootstrapExternalStaticGateway: 10.10.2.1 #"${PROVISIONING_HOST_EXTERNAL_IP}"
 EOF
     if ! printf '%s\n4.13\n' "$(openshift_version)" | sort -V -C; then
 cat <<EOF

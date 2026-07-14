@@ -402,7 +402,7 @@ if [ "$MANAGE_BR_BRIDGE" == "y" ] ; then
     sleep 1
     sudo virsh net-start "${BAREMETAL_NETWORK_NAME}"
     # Needed in IPv6 on some EL9 hosts for the bootstrap VM to get an IP
-    echo 0 | sudo dd of="/proc/sys/net/ipv6/conf/${BAREMETAL_NETWORK_NAME}/addr_gen_mode"
+    #echo 0 | sudo dd of="/proc/sys/net/ipv6/conf/${BAREMETAL_NETWORK_NAME}/addr_gen_mode"
     if [ "$INT_IF" ]; then #Need to bring UP the NIC after destroying the libvirt network
         sudo nmcli con up "${INT_IF}"
     fi
